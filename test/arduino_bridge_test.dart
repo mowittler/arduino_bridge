@@ -1,3 +1,9 @@
+/*
+ * Author: Maik Oberwittler
+ * Date: 2026-06-10
+ * License: MIT
+ */
+
 import 'dart:async';
 import 'dart:io';
 import 'dart:typed_data';
@@ -138,10 +144,7 @@ void main() {
 
     // Calling before connect() must fail without touching the socket.
     test('call() throws StateError when not connected', () async {
-      await expectLater(
-        bridge.call('any', []),
-        throwsA(isA<StateError>()),
-      );
+      await expectLater(bridge.call('any', []), throwsA(isA<StateError>()));
     });
 
     // Each request must carry a strictly increasing msgid so responses
@@ -173,8 +176,7 @@ void main() {
 
       bridge.notify('event/ping', ['hello']);
 
-      final msg =
-          await received.future.timeout(const Duration(seconds: 2));
+      final msg = await received.future.timeout(const Duration(seconds: 2));
       // MessagePack-RPC notification format: [type, method, args]
       expect(msg[0], 2); // type = notification
       expect(msg[1], 'event/ping');
@@ -230,8 +232,7 @@ void main() {
       // Register the listener before disconnecting — _failPending completes
       // the completer synchronously, so the error lands on callFuture before
       // expectLater is reached if we await disconnect() first.
-      final expectation =
-          expectLater(callFuture, throwsA(isA<StateError>()));
+      final expectation = expectLater(callFuture, throwsA(isA<StateError>()));
       await bridge.disconnect();
       await expectation;
     });

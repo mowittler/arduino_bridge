@@ -1,3 +1,9 @@
+/*
+ * Author: Maik Oberwittler
+ * Date: 2026-06-10
+ * License: MIT
+ */
+
 import 'dart:async';
 import 'dart:io';
 import 'dart:typed_data';

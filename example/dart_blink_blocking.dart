@@ -1,3 +1,9 @@
+/*
+ * Author: Maik Oberwittler
+ * Date: 2026-06-10
+ * License: MIT
+ */
+
 import 'dart:io';
 import 'package:arduino_bridge/arduino_bridge.dart';
 
