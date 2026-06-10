@@ -1,5 +1,5 @@
 name: arduino_bridge
-description: A starting point for Dart libraries or applications.
+description: A Dart/Flutter package for communicating with the Arduino Router using the MessagePack-RPC protocol on the Arduino Uno Q and Ventuno Q.
 repository: https://github.com/mowittler/arduino_bridge
 version: 1.0.0
 
