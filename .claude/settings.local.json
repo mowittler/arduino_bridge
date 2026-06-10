@@ -1,0 +1,8 @@
+{
+  "permissions": {
+    "allow": [
+      "Bash(/Users/maik/flutter/bin/dart analyze *)",
+      "Bash(/Users/maik/flutter/bin/dart test *)"
+    ]
+  }
+}
