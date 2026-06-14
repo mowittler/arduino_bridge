@@ -1,5 +1,5 @@
 /*
- * Author: Maik Oberwittler
+ * Author: mowittler
  * Date: 2026-06-10
  * License: MIT
  */
@@ -98,7 +98,7 @@ class _BlinkPageState extends State<BlinkPage> {
               ),
             ),
             const SizedBox(height: 32),
-            const Text('Click to control boards LED 👆'),
+            const Text('Click to control boards LED'),
           ],
         ),
       ),

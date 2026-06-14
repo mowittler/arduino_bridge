@@ -12,7 +12,7 @@ the **Ventuno Q**.
 
 The Arduino router daemon listens on a Unix domain socket and acts as a
 broker between the host application and the MCU. This package connects to
-that socket and communicates using MessagePack-RPC — a compact binary RPC
+that socket and communicates using MessagePack-RPC - a compact binary RPC
 protocol built on top of
 [MessagePack](https://msgpack.org/) serialization.
 
@@ -36,19 +36,6 @@ Three message types are used:
 
 This package is compatible with **Flutter for Linux desktop** only. No additional
 setup is needed beyond targeting the Linux platform in your Flutter project.
-
----
-
-## Installation
-
-```yaml
-dependencies:
-  arduino_bridge: ^0.9.0
-```
-
-```sh
-dart pub get
-```
 
 ---
 
