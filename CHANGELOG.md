@@ -1,3 +1,5 @@
+# 1.1.0
+
 * Fixed bridge.register and added bridge.provide which was not working correctly or was not available at all.
 
 * Added several additional examples which show the possibilities of the library.
