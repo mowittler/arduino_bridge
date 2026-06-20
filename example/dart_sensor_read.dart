@@ -1,4 +1,6 @@
 // Make sure to compile and upload the provided sketch.ino to the MCU first.
+// Connect a potentiometer to VCC (3.3V) and GND, and the wiper to A0 for this example.
+import 'dart:async';
 import 'arduino_bridge.dart';
 
 Future<void> main() async {
@@ -11,11 +13,13 @@ Future<void> main() async {
   }
   print('Connected to Arduino Bridge');
 
-  bool ledState = false;
   for (var i = 0; i < 10; i++) {
-    ledState = !ledState;
-    print('LED is ${ledState ? 'ON' : 'OFF'}');
-    bridge.notify('set_led_state', [ledState]);
+    try {
+      final value = await bridge.call('read_sensor', []);
+      print('Sensor value: $value');
+    } catch (e) {
+      print('Error: $e');
+    }
     await Future.delayed(const Duration(seconds: 1));
   }
 

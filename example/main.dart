@@ -1,11 +1,8 @@
-/*
- * Author: mowittler
- * Date: 2026-06-10
- * License: MIT
- */
-
+// Flutter Blink UI (inspired by App Lab example 'Blink with UI')
+// Additional examples can be found in the `example` directory of the package, and on the official GitHub repository.
+// Make sure to compile and upload the provided sketch.ino to the MCU first.
 import 'package:flutter/material.dart';
-import 'package:arduino_bridge/arduino_bridge.dart';
+import 'arduino_bridge.dart';
 
 void main() {
   runApp(const MainApp());

@@ -20,8 +20,8 @@ Three message types are used:
 
 | Type | Direction | Description |
 |------|-----------|-------------|
-| Request (0) | host → router | Call a method and wait for a response |
-| Response (1) | router → host | Result or error for a previous request |
+| Request (0) | host ↔ router | Call a method and wait for a response |
+| Response (1) | host ↔ router | Result or error for a previous request |
 | Notification (2) | host → router | Fire-and-forget message, no response |
 
 ---
@@ -29,6 +29,8 @@ Three message types are used:
 ## Requirements
 
 - [Arduino Uno Q](https://www.arduino.cc/product-uno-q/) or [Ventuno Q](https://www.arduino.cc/product-ventuno-q/) with the Arduino router daemon running
+- The `sketch.ino` from the `example/` directory compiled and flashed to the MCU in order to run the examples
+
 
 ---
 
@@ -56,7 +58,7 @@ reachable.
 `call()` sends a request and waits for the router to reply:
 
 ```dart
-final result = await bridge.call('sensor/read', [0]);
+final result = await bridge.call('sensor_read', [0]);
 ```
 
 The default timeout is 5 seconds. 
@@ -72,6 +74,22 @@ A `TimeoutException` is thrown if no response arrives in time. An
 bridge.notify('set_led_state', [true]);
 ```
 
+### Providing a method
+
+`provide()` exposes a Dart function so the router can call it from the MCU
+side. It registers the method name with the router and dispatches incoming
+requests to your handler automatically. The handler can be synchronous or
+`async`:
+
+```dart
+await bridge.provide('sensor_calibrate', (int channel) async {
+  return 'done';
+});
+```
+
+If the router calls a method that was never provided, the bridge replies with
+an error payload automatically.
+
 ### Disconnecting
 
 `disconnect()` closes the socket and rejects all pending `call()` futures
@@ -83,6 +101,287 @@ await bridge.disconnect();
 
 ---
 
+## Examples
+
+### Flashing the MCU
+
+Before running any of the examples below, compile and upload `example/sketch.ino` to your board using [arduino-cli](https://arduino.github.io/arduino-cli/). For the Arduino Uno Q use this:
+
+```sh
+arduino-cli compile --fqbn arduino:zephyr:unoq example/sketch.ino
+arduino-cli upload -p /dev/ttyHS1 --fqbn arduino:zephyr:unoq example/sketch.ino
+```
+
+The sketch exposes two methods the host can call (`set_led_state`, `read_sensor`) and periodically calls `mcuCall` back on the host side:
+
+```cpp
+#include "Arduino_RouterBridge.h"
+
+void setup() {
+    pinMode(LED_BUILTIN, OUTPUT);
+    
+    Bridge.begin();
+    Bridge.provide("set_led_state", set_led_state);
+    Bridge.provide("read_sensor", read_sensor);
+}
+
+void loop() {
+    Bridge.call("mcuCall", "Hello from MCU!");
+    delay(1000);
+}
+
+void set_led_state(bool state) {
+    digitalWrite(LED_BUILTIN, state ? LOW : HIGH);
+}
+
+// connect a potentiometer to VCC (3.3V) and GND, and the wiper to A0
+int read_sensor() {
+    return analogRead(A0);
+}
+```
+
+> **Note:** All examples run without a potentiometer connected. However, without one the `read_sensor` example will always return the same floating pin value rather than a varying reading.
+
+---
+
+### Blink (blocking)
+
+Toggles the built-in LED 10 times using `notify()`.
+
+```dart
+import 'dart:io';
+import 'arduino_bridge.dart';
+
+void main() {
+  bool ledState = false;
+
+  final bridge = ArduinoBridge();
+  bridge.connect().then((connected) {
+    for (var i = 0; i < 10; i++) {
+      ledState = !ledState;
+      print('LED is ${ledState ? 'ON' : 'OFF'}');
+      bridge.notify('set_led_state', [ledState]);
+      sleep(const Duration(seconds: 1));
+    }
+
+    bridge.disconnect();
+  });
+}
+```
+
+---
+
+### Blink (async)
+
+The same LED blink loop rewritten with `async`/`await` and `Future.delayed`, keeping the event loop free between toggles.
+
+```dart
+import 'arduino_bridge.dart';
+
+Future<void> main() async {
+  final bridge = ArduinoBridge();
+
+  final connected = await bridge.connect();
+  if (!connected) {
+    print('Failed to connect to Arduino Bridge');
+    return;
+  }
+  print('Connected to Arduino Bridge');
+
+  bool ledState = false;
+  for (var i = 0; i < 10; i++) {
+    ledState = !ledState;
+    print('LED is ${ledState ? 'ON' : 'OFF'}');
+    bridge.notify('set_led_state', [ledState]);
+    await Future.delayed(const Duration(seconds: 1));
+  }
+
+  await bridge.disconnect();
+  print('Disconnected from Arduino Bridge');
+}
+```
+
+---
+
+### Sensor read
+
+Reads an analog value from the potentiometer wired to pin A0 ten times, once per second, using `call()`. Connect the potentiometer wiper to A0, one end to 3.3 V, and the other to GND.
+
+```dart
+// Connect a potentiometer to VCC (3.3V) and GND, and the wiper to A0 for this example.
+import 'dart:async';
+import 'arduino_bridge.dart';
+
+Future<void> main() async {
+  final bridge = ArduinoBridge();
+
+  final connected = await bridge.connect();
+  if (!connected) {
+    print('Failed to connect to Arduino Bridge');
+    return;
+  }
+  print('Connected to Arduino Bridge');
+
+  for (var i = 0; i < 10; i++) {
+    try {
+      final value = await bridge.call('read_sensor', []);
+      print('Sensor value: $value');
+    } catch (e) {
+      print('Error: $e');
+    }
+    await Future.delayed(const Duration(seconds: 1));
+  }
+
+  await bridge.disconnect();
+  print('Disconnected from Arduino Bridge');
+}
+```
+
+---
+
+### Provide print
+
+Exposes a `mcuCall` method so the MCU can push data to the host. The sketch calls it every second; the handler simply prints whatever it receives. After 10 seconds the bridge disconnects.
+
+```dart
+import 'dart:async';
+import 'arduino_bridge.dart';
+
+void mcuCall(dynamic data) {
+  print(data);
+}
+
+Future<void> main() async {
+  final bridge = ArduinoBridge();
+
+  final connected = await bridge.connect();
+  if (!connected) {
+    print('Failed to connect to Arduino Bridge');
+    return;
+  }
+  print('Connected to Arduino Bridge');
+
+  await bridge.provide('mcuCall', mcuCall);
+
+  await Future.delayed(const Duration(seconds: 10));
+  await bridge.disconnect();
+  print('Disconnected from Arduino Bridge');
+}
+```
+
+---
+
+### Flutter UI (main.dart)
+
+A minimal Flutter Linux desktop app with a tap-to-toggle LED button. Connecting to the bridge happens in `initState`; toggling the LED sends a `notify` call; disconnecting is handled in `dispose`.
+
+```dart
+// Flutter Blink UI (inspired by App Lab example 'Blink with UI')
+import 'package:flutter/material.dart';
+import 'arduino_bridge.dart';
+
+void main() {
+  runApp(const MainApp());
+}
+
+class MainApp extends StatelessWidget {
+  const MainApp({super.key});
+
+  @override
+  Widget build(BuildContext context) {
+    return const MaterialApp(
+      debugShowCheckedModeBanner: false,
+      home: BlinkPage(),
+    );
+  }
+}
+
+class BlinkPage extends StatefulWidget {
+  const BlinkPage({super.key});
+
+  @override
+  State<BlinkPage> createState() => _BlinkPageState();
+}
+
+class _BlinkPageState extends State<BlinkPage> {
+  bool _ledOn = false;
+  final ArduinoBridge _bridge = ArduinoBridge();
+
+  @override
+  void initState() {
+    super.initState();
+    _bridge.connect().then((connected) {
+      if (connected) {
+        print('Connected to Arduino Bridge');
+      }
+    });
+  }
+
+  void _toggleLed() {
+    setState(() => _ledOn = !_ledOn);
+    _bridge.notify('set_led_state', [_ledOn]);
+  }
+
+  @override
+  void dispose() {
+    _bridge.notify('set_led_state', [false]);
+    _bridge.disconnect();
+    super.dispose();
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    return Scaffold(
+      appBar: AppBar(
+        centerTitle: false,
+        backgroundColor: Colors.blue,
+        title: const Text('Flutter Blink'),
+        actions: const [
+          Padding(
+            padding: EdgeInsets.only(right: 16),
+            child: Icon(Icons.flutter_dash, size: 28),
+          ),
+        ],
+      ),
+      body: Center(
+        child: Column(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            GestureDetector(
+              onTap: _toggleLed,
+              child: Container(
+                width: 160,
+                height: 160,
+                decoration: BoxDecoration(
+                  shape: BoxShape.circle,
+                  color: _ledOn
+                      ? Colors.blue.withValues(alpha: 0.5)
+                      : Colors.grey,
+                  boxShadow: _ledOn
+                      ? [
+                          BoxShadow(
+                            color: Colors.blue.withValues(alpha: 0.5),
+                            blurRadius: 48,
+                            spreadRadius: 12,
+                          ),
+                        ]
+                      : [],
+                ),
+                child: Center(child: Text(_ledOn ? 'LED IS ON' : 'LED IS OFF')),
+              ),
+            ),
+            const SizedBox(height: 32),
+            const Text('Click to control boards LED'),
+          ],
+        ),
+      ),
+    );
+  }
+}
+```
+
+---
+
 ## API reference
 
 | Method | Returns | Description |
@@ -90,8 +389,7 @@ await bridge.disconnect();
 | `connect()` | `Future<bool>` | Opens the socket connection |
 | `call(method, args, {timeout})` | `Future<dynamic>` | Sends a request and awaits the response |
 | `notify(method, args)` | `void` | Sends a fire-and-forget notification |
-| `register(methodName)` | `Future<void>` | Registers a method name with the router |
-| `reset()` | `Future<void>` | Resets the router connection state |
+| `provide(method, handler)` | `Future<void>` | Exposes a Dart function for the router to call |
 | `disconnect()` | `Future<void>` | Closes the connection |
 
 Full API documentation is available on

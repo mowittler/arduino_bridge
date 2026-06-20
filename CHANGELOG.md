@@ -1,3 +1,13 @@
+* Fixed bridge.register and added bridge.provide which was not working correctly or was not available at all.
+
+* Added several additional examples which show the possibilities of the library.
+
+* Added the required sketch.ino for the MCU in order to run the provided examples to the example directory.
+
+* Added the required main.py for the flutter_advanced example in the example directory.
+
+* Added a description how to use the examples in the readme.
+
 # 1.0.2
 
 * Removed Flutter SDK from pubspec.yaml in order to show that the package works also without flutter in a pure dart environment.

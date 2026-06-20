@@ -1,8 +1,7 @@
-/*
- * Author: mowittler
- * Date: 2026-06-10
- * License: MIT
- */
+//
+// Author: mowittler
+// Date: 2026-06-19
+// License: MIT
 
 import 'dart:async';
 import 'dart:io';
@@ -51,6 +50,11 @@ class FakeRouter {
   // Sends a type-1 (response) frame back to the connected client.
   void reply(int msgid, {dynamic error, dynamic result}) {
     _client?.add(serialize([1, msgid, error, result]));
+  }
+
+  // Sends a type-0 (request) frame to the connected client.
+  void request(int msgid, String method, List<dynamic> args) {
+    _client?.add(serialize([0, msgid, method, args]));
   }
 
   // Closes only the accepted client socket, leaving the server socket open.
@@ -217,6 +221,88 @@ void main() {
 
       await bridge.reset(); // must not throw
     });
+
+    // -- provide ---------------------------------------------------
+
+    test('provide() sends \$/register for the method name', () async {
+      await bridge.connect();
+
+      String? registeredName;
+      router.onMessage = (msg) {
+        registeredName = msg[3][0] as String;
+        router.reply(msg[1] as int, result: null);
+      };
+
+      await bridge.provide('sensor/read', (_) => 42);
+
+      expect(registeredName, 'sensor/read');
+    });
+
+    test(
+      'provide() dispatches incoming request to handler and sends response',
+      () async {
+        await bridge.connect();
+
+        // Reply to the $/register call that provide() triggers internally.
+        router.onMessage = (msg) => router.reply(msg[1] as int, result: null);
+        await bridge.provide('greet', (String name) => 'hello $name');
+
+        // Capture the bridge's reply to our incoming request.
+        final replyReceived = Completer<List<dynamic>>();
+        router.onMessage = replyReceived.complete;
+
+        router.request(42, 'greet', ['world']);
+
+        final response = await replyReceived.future.timeout(
+          const Duration(seconds: 2),
+        );
+        expect(response[0], 1); // type = response
+        expect(response[1], 42); // msgid echoed back
+        expect(response[2], isNull); // no error
+        expect(response[3], 'hello world'); // handler return value
+      },
+    );
+
+    test('provide() sends error response when handler throws', () async {
+      await bridge.connect();
+
+      router.onMessage = (msg) => router.reply(msg[1] as int, result: null);
+      await bridge.provide('boom', (_) => throw Exception('oops'));
+
+      final replyReceived = Completer<List<dynamic>>();
+      router.onMessage = replyReceived.complete;
+
+      router.request(7, 'boom', []);
+
+      final response = await replyReceived.future.timeout(
+        const Duration(seconds: 2),
+      );
+      expect(response[0], 1); // type = response
+      expect(response[1], 7); // msgid echoed back
+      expect(response[2], isNotNull); // error payload present
+      expect(response[3], isNull); // no result
+    });
+
+    test(
+      'provide() sends error response when method is not registered',
+      () async {
+        await bridge.connect();
+
+        final replyReceived = Completer<List<dynamic>>();
+        router.onMessage = replyReceived.complete;
+
+        // Send a request for a method that was never provided.
+        router.request(99, 'unknown/method', []);
+
+        final response = await replyReceived.future.timeout(
+          const Duration(seconds: 2),
+        );
+        expect(response[0], 1); // type = response
+        expect(response[1], 99); // msgid echoed back
+        expect(response[2], isNotNull); // error: method not found
+        expect(response[3], isNull); // no result
+      },
+    );
 
     // -- disconnect -------------------------------------------------
 

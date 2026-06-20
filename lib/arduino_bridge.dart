@@ -1,8 +1,7 @@
-/*
- * Author: mowittler
- * Date: 2026-06-10
- * License: MIT
- */
+//
+// Author: mowittler
+// Date: 2026-06-19
+// License: MIT
 
 library;
 

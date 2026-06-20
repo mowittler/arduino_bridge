@@ -1,5 +1,10 @@
 // Make sure to compile and upload the provided sketch.ino to the MCU first.
+import 'dart:async';
 import 'arduino_bridge.dart';
+
+void mcuCall(dynamic data) {
+  print(data);
+}
 
 Future<void> main() async {
   final bridge = ArduinoBridge();
@@ -11,14 +16,9 @@ Future<void> main() async {
   }
   print('Connected to Arduino Bridge');
 
-  bool ledState = false;
-  for (var i = 0; i < 10; i++) {
-    ledState = !ledState;
-    print('LED is ${ledState ? 'ON' : 'OFF'}');
-    bridge.notify('set_led_state', [ledState]);
-    await Future.delayed(const Duration(seconds: 1));
-  }
+  await bridge.provide('mcuCall', mcuCall);
 
+  await Future.delayed(const Duration(seconds: 10));
   await bridge.disconnect();
   print('Disconnected from Arduino Bridge');
 }

@@ -1,21 +1,16 @@
-/*
- * Author: mowittler
- * Date: 2026-06-10
- * License: MIT
- */
-
+// Make sure to compile and upload the provided sketch.ino to the MCU first.
 import 'dart:io';
-import 'package:arduino_bridge/arduino_bridge.dart';
+import 'arduino_bridge.dart';
 
 void main() {
-  bool led_state = false;
+  bool ledState = false;
 
   final bridge = ArduinoBridge();
   bridge.connect().then((connected) {
     for (var i = 0; i < 10; i++) {
-      led_state = !led_state;
-      print('LED is ${led_state ? 'ON' : 'OFF'}');
-      bridge.notify('set_led_state', [led_state]);
+      ledState = !ledState;
+      print('LED is ${ledState ? 'ON' : 'OFF'}');
+      bridge.notify('set_led_state', [ledState]);
       sleep(const Duration(seconds: 1));
     }
 
