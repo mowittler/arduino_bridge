@@ -1,3 +1,9 @@
+# 1.1.2
+
+* Created folders for sketch and python files.
+
+* Fixed the imports in the readme code embeddings.
+
 # 1.1.1
 
 * Provided the missing flutter_advanced example

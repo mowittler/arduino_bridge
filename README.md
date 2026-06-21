@@ -29,7 +29,7 @@ Three message types are used:
 ## Requirements
 
 - [Arduino Uno Q](https://www.arduino.cc/product-uno-q/) or [Ventuno Q](https://www.arduino.cc/product-ventuno-q/) with the Arduino router daemon running
-- The `sketch.ino` from the `example/` directory compiled and flashed to the MCU in order to run the examples
+- The `sketch.ino` from the `example/sketch/` directory compiled and flashed to the MCU in order to run the examples
 
 
 ---
@@ -105,11 +105,11 @@ await bridge.disconnect();
 
 ### Flashing the MCU
 
-Before running any of the examples below, compile and upload `example/sketch.ino` to your board using [arduino-cli](https://arduino.github.io/arduino-cli/). For the Arduino Uno Q use this:
+Before running any of the examples below, compile and upload `example/sketch/sketch.ino` to your board using [arduino-cli](https://arduino.github.io/arduino-cli/). For the Arduino Uno Q use this:
 
 ```sh
-arduino-cli compile --fqbn arduino:zephyr:unoq example/sketch.ino
-arduino-cli upload -p /dev/ttyHS1 --fqbn arduino:zephyr:unoq example/sketch.ino
+arduino-cli compile --fqbn arduino:zephyr:unoq example/sketch/sketch.ino
+arduino-cli upload -p /dev/ttyHS1 --fqbn arduino:zephyr:unoq example/sketch/sketch.ino
 ```
 
 The sketch exposes two methods the host can call (`set_led_state`, `read_sensor`) and periodically calls `mcuCall` back on the host side:
@@ -142,7 +142,7 @@ int read_sensor() {
 
 > **Note:** All examples run without a potentiometer connected. However, without one the `read_sensor` example will always return the same floating pin value rather than a varying reading.
 
-> **Note:** The `main.py` file in the `example/` directory is only required for the `flutter_advanced` example. All other examples are pure Dart/Flutter and do not depend on it.
+> **Note:** The `main.py` file in the `example/python/` directory is only required for the `flutter_advanced` example. All other examples are pure Dart/Flutter and do not depend on it.
 
 ---
 
@@ -152,7 +152,7 @@ Toggles the built-in LED 10 times using `notify()`.
 
 ```dart
 import 'dart:io';
-import 'arduino_bridge.dart';
+import 'package:arduino_bridge/arduino_bridge.dart';
 
 void main() {
   bool ledState = false;
@@ -178,7 +178,7 @@ void main() {
 The same LED blink loop rewritten with `async`/`await` and `Future.delayed`, keeping the event loop free between toggles.
 
 ```dart
-import 'arduino_bridge.dart';
+import 'package:arduino_bridge/arduino_bridge.dart';
 
 Future<void> main() async {
   final bridge = ArduinoBridge();
@@ -212,7 +212,7 @@ Reads an analog value from the potentiometer wired to pin A0 ten times, once per
 ```dart
 // Connect a potentiometer to VCC (3.3V) and GND, and the wiper to A0 for this example.
 import 'dart:async';
-import 'arduino_bridge.dart';
+import 'package:arduino_bridge/arduino_bridge.dart';
 
 Future<void> main() async {
   final bridge = ArduinoBridge();
@@ -247,7 +247,7 @@ Exposes a `mcuCall` method so the MCU can push data to the host. The sketch call
 
 ```dart
 import 'dart:async';
-import 'arduino_bridge.dart';
+import 'package:arduino_bridge/arduino_bridge.dart';
 
 void mcuCall(dynamic data) {
   print(data);
@@ -280,7 +280,7 @@ A minimal Flutter Linux desktop app with a tap-to-toggle LED button. Connecting 
 ```dart
 // Flutter Blink UI (inspired by App Lab example 'Blink with UI')
 import 'package:flutter/material.dart';
-import 'arduino_bridge.dart';
+import 'package:arduino_bridge/arduino_bridge.dart';
 
 void main() {
   runApp(const MainApp());
@@ -405,8 +405,8 @@ def set_interval(new_interval):
 Bridge.provide("set_interval", set_interval)
 
 def loop():
-    global led_state
-    global interval
+    led_state
+    interval
     time.sleep(interval)
     led_state = not led_state
     Bridge.call("set_led_state", led_state)
