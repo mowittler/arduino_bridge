@@ -142,6 +142,8 @@ int read_sensor() {
 
 > **Note:** All examples run without a potentiometer connected. However, without one the `read_sensor` example will always return the same floating pin value rather than a varying reading.
 
+> **Note:** The `main.py` file in the `example/` directory is only required for the `flutter_advanced` example. All other examples are pure Dart/Flutter and do not depend on it.
+
 ---
 
 ### Blink (blocking)
@@ -373,6 +375,128 @@ class _BlinkPageState extends State<BlinkPage> {
             const SizedBox(height: 32),
             const Text('Click to control boards LED'),
           ],
+        ),
+      ),
+    );
+  }
+}
+```
+
+---
+
+### Flutter Blink Advanced (main.py + flutter_blink_advanced.dart)
+
+A two-part example that separates the blink loop from the UI. `main.py` runs on the MPU and drives the LED autonomously, toggling it at a configurable interval. The Flutter app exposes a slider that sends a `set_interval` notification whenever the user changes the value — no polling, no blocking.
+
+**`main.py`** (runs on the MPU):
+
+```python
+from arduino.app_utils import *
+import time
+
+led_state = False
+
+interval = 1.0
+
+def set_interval(new_interval):
+    global interval
+    interval = new_interval
+
+Bridge.provide("set_interval", set_interval)
+
+def loop():
+    global led_state
+    global interval
+    time.sleep(interval)
+    led_state = not led_state
+    Bridge.call("set_led_state", led_state)
+
+App.run(user_loop=loop)
+```
+
+**`flutter_blink_advanced.dart`** (Flutter Linux desktop app):
+
+```dart
+// Make sure to compile and upload the provided sketch.ino to the MCU first.
+// Make sure that the provided main.py is running on the MPU.
+import 'package:flutter/material.dart';
+import 'package:arduino_bridge/arduino_bridge.dart';
+
+void main() {
+  runApp(const MainApp());
+}
+
+class MainApp extends StatefulWidget {
+  const MainApp({super.key});
+
+  @override
+  State<MainApp> createState() => _MainAppState();
+}
+
+class _MainAppState extends State<MainApp> {
+  static const _intervals = [0.25, 0.5, 1.0, 1.5, 2.0];
+  int _index = 2;
+  final ArduinoBridge _bridge = ArduinoBridge();
+
+  @override
+  void initState() {
+    super.initState();
+    _bridge.connect().then((connected) {
+      if (connected) {
+        print('Connected to Arduino Bridge');
+      }
+    });
+  }
+
+  void _onIntervalChanged(double interval) {
+    setState(() => _index = interval.round());
+    _bridge.notify('set_interval', [_intervals[_index]]);
+  }
+
+  @override
+  void dispose() {
+    _bridge.disconnect();
+    super.dispose();
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    return MaterialApp(
+      debugShowCheckedModeBanner: false,
+      home: Scaffold(
+        body: Center(
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              Text(
+                'Please select the blinking interval of the LED in seconds:',
+              ),
+              Slider(
+                min: 0,
+                max: 4.0,
+                divisions: 4,
+                value: _index.toDouble(),
+                label: '${_intervals[_index]}',
+                onChanged: _onIntervalChanged,
+              ),
+              Padding(
+                padding: const EdgeInsets.symmetric(horizontal: 24),
+                child: Row(
+                  mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                  children: _intervals
+                      .map(
+                        (interval) => Text(
+                          interval == interval.truncate()
+                              ? '${interval.toInt()}'
+                              : '$interval',
+                          style: const TextStyle(fontSize: 12),
+                        ),
+                      )
+                      .toList(),
+                ),
+              ),
+            ],
+          ),
         ),
       ),
     );

@@ -1,6 +1,6 @@
 // Make sure to compile and upload the provided sketch.ino to the MCU first.
 import 'dart:async';
-import 'arduino_bridge.dart';
+import 'package:arduino_bridge/arduino_bridge.dart';
 
 void mcuCall(dynamic data) {
   print(data);

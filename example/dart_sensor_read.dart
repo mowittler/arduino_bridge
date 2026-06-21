@@ -1,7 +1,7 @@
 // Make sure to compile and upload the provided sketch.ino to the MCU first.
 // Connect a potentiometer to VCC (3.3V) and GND, and the wiper to A0 for this example.
 import 'dart:async';
-import 'arduino_bridge.dart';
+import 'package:arduino_bridge/arduino_bridge.dart';
 
 Future<void> main() async {
   final bridge = ArduinoBridge();

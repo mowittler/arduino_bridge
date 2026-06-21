@@ -1,3 +1,9 @@
+# 1.1.1
+
+* Provided the missing flutter_advanced example
+
+* Fixed the import
+
 # 1.1.0
 
 * Fixed bridge.register and added bridge.provide which was not working correctly or was not available at all.

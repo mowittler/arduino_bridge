@@ -1,6 +1,6 @@
 // Make sure to compile and upload the provided sketch.ino to the MCU first.
 import 'dart:io';
-import 'arduino_bridge.dart';
+import 'package:arduino_bridge/arduino_bridge.dart';
 
 void main() {
   bool ledState = false;
