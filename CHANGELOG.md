@@ -1,3 +1,7 @@
+# 1.1.3
+
+* Added global to led_state in the python file.
+
 # 1.1.2
 
 * Created folders for sketch and python files.
