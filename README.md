@@ -12,17 +12,16 @@ the **Ventuno Q**.
 
 The Arduino router daemon listens on a Unix domain socket and acts as a
 broker between the host application and the MCU. This package connects to
-that socket and communicates using MessagePack-RPC - a compact binary RPC
-protocol built on top of
-[MessagePack](https://msgpack.org/) serialization.
+that socket and communicates using MessagePack-RPC, a compact binary RPC
+protocol built on top of [MessagePack](https://msgpack.org/) serialization.
 
 Three message types are used:
 
 | Type | Direction | Description |
 |------|-----------|-------------|
-| Request (0) | host ↔ router | Call a method and wait for a response |
-| Response (1) | host ↔ router | Result or error for a previous request |
-| Notification (2) | host → router | Fire-and-forget message, no response |
+| Request (0) | host <-> router | Call a method and wait for a response |
+| Response (1) | host <-> router | Result or error for a previous request |
+| Notification (2) | host -> router | Fire-and-forget message, no response |
 
 ---
 
@@ -37,7 +36,7 @@ Three message types are used:
 ## Flutter compatibility
 
 This package is compatible with **Flutter for Linux desktop** only. No additional
-setup is needed beyond targeting the Linux platform in your Flutter project.
+setup is needed beyond targeting the Linux platform in your Flutter project. It also works in a dart-only environment.
 
 ---
 
@@ -142,7 +141,7 @@ int read_sensor() {
 
 > **Note:** All examples run without a potentiometer connected. However, without one the `read_sensor` example will always return the same floating pin value rather than a varying reading.
 
-> **Note:** The `main.py` file in the `example/python/` directory is only required for the `flutter_advanced` example. All other examples are pure Dart/Flutter and do not depend on it.
+> **Note:** The `main.py` file in the `example/python/` directory is only required for the `flutter_advanced` example. All other examples are pure Dart/Flutter and do not depend on it (but on the `sketch.ino`).
 
 ---
 
@@ -386,7 +385,7 @@ class _BlinkPageState extends State<BlinkPage> {
 
 ### Flutter Blink Advanced (main.py + flutter_blink_advanced.dart)
 
-A two-part example that separates the blink loop from the UI. `main.py` runs on the MPU and drives the LED autonomously, toggling it at a configurable interval. The Flutter app exposes a slider that sends a `set_interval` notification whenever the user changes the value — no polling, no blocking.
+A two-part example that separates the blink loop from the UI. `main.py` runs on the MPU (Linux side) and drives the LED autonomously, toggling it at a configurable interval. The Flutter app exposes a slider that sends a `set_interval` notification whenever the user changes the value — no polling, no blocking. This example better reflects a real-life scenario.
 
 **`main.py`** (runs on the MPU):
 
